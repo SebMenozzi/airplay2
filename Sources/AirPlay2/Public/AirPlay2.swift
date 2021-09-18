@@ -1,8 +1,6 @@
 import Foundation
 
-/// The `AirTunes` class creates a server that AirPlay clients may connect and
-/// stream audio to.
-public class AirTunes: NSObject {
+public class AirPlay2: NSObject {
     private let manager: SessionManager
 
     /// Creates an `AirTunes` instance with the specified delegate.
