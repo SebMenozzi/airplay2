@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "AirPlay2",
+    name: "AirPlayLib",
     platforms: [
         .macOS(.v11),
         .iOS(.v13)
@@ -13,48 +13,43 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         .package(
             url: "https://github.com/robbiehanson/CocoaAsyncSocket",
-            from: "7.6.4"
+            from: "7.6.5"
         ),
         .package(
-            url: "https://github.com/Bouke/SRP",
-            .branch("master")
+            url: "https://github.com/krzyzanowskim/CryptoSwift.git",
+            .upToNextMajor(from: "1.4.2")
         )
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
-            name: "AirPlay2",
+            name: "AirPlay",
             dependencies: [
                 "CocoaAsyncSocket",
-                "CryptoBindings",
-                "SRP"
+                "Curve25519",
+                "CryptoSwift",
+                "Ed25519"
             ],
             resources: [
                 .process("Resources"),
             ]
         ),
         .target(
-            name: "CryptoBindings",
-            dependencies: [
-                "Curve25519",
-                "ed25519"
-            ],
-            exclude: ["SwiftSources"],
-            cSettings: [
-                .headerSearchPath("include"),
-            ]
-        ),
-        .target(
             name: "Curve25519"
         ),
         .target(
-            name: "ed25519",
-            exclude: ["sha512/LICENSE.txt"]
+            name: "Ed25519",
+            dependencies: [
+                "CEd25519"
+            ]
+        ),
+        .target(
+            name: "CEd25519"
         ),
         .testTarget(
-            name: "AirPlay2Tests",
-            dependencies: ["AirPlay2"]
+            name: "AirPlayTests",
+            dependencies: ["AirPlay"]
         )
     ]
 )

@@ -2,15 +2,6 @@
   "object": {
     "pins": [
       {
-        "package": "BigInt",
-        "repositoryURL": "https://github.com/attaswift/BigInt.git",
-        "state": {
-          "branch": null,
-          "revision": "0ed110f7555c34ff468e72e1686e59721f2b0da6",
-          "version": "5.3.0"
-        }
-      },
-      {
         "package": "CocoaAsyncSocket",
         "repositoryURL": "https://github.com/robbiehanson/CocoaAsyncSocket",
         "state": {
@@ -20,21 +11,12 @@
         }
       },
       {
-        "package": "SRP",
-        "repositoryURL": "https://github.com/Bouke/SRP",
-        "state": {
-          "branch": "master",
-          "revision": "c01934477cb0aa14b4da5c3cb61d447bd6393ce0",
-          "version": null
-        }
-      },
-      {
-        "package": "swift-crypto",
-        "repositoryURL": "https://github.com/apple/swift-crypto.git",
+        "package": "CryptoSwift",
+        "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
         "state": {
           "branch": null,
-          "revision": "3bea268b223651c4ab7b7b9ad62ef9b2d4143eb6",
-          "version": "1.1.6"
+          "revision": "4b0565384d3c4c588af09e660535b2c7c9bf5b39",
+          "version": "1.4.2"
         }
       }
     ]
