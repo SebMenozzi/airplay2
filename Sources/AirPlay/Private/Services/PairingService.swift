@@ -5,9 +5,8 @@ import Curve25519
 import CryptoKit
 import CryptoSwift
 
-final class Pairing {
-    var isPairingVerified: Bool = false
-
+final class PairingService {
+    
     private let seed = try! Ed25519Seed()
     private lazy var ed25519keyPair = Ed25519KeyPair(seed: seed)
 
@@ -17,6 +16,8 @@ final class Pairing {
     private var ecdhOurs = Data()
 
     // MARK: - Public
+
+    var isPairingVerified: Bool = false
 
     func setup() -> Data {
         return ed25519keyPair.publicKey.bytes.data

@@ -1,15 +1,9 @@
 import CocoaAsyncSocket
 import Cocoa
 
-final class MirrorService: NSObject, GCDAsyncSocketDelegate {
+final class AudioService: NSObject, GCDAsyncSocketDelegate {
+
     private var tcpSockets = [GCDAsyncSocket]()
-
-    private let port: UInt16
-    init(port: UInt16) {
-        self.port = port
-
-        super.init()
-    }
 
     func start() {
         let socket = createSocket()
@@ -22,7 +16,7 @@ final class MirrorService: NSObject, GCDAsyncSocketDelegate {
     }
 
     func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        print(data)
+        print("Audio", data)
     }
 
     func socket(_ sock: GCDAsyncSocket, shouldTimeoutReadWithTag tag: Int, elapsed: TimeInterval, bytesDone length: UInt) -> TimeInterval {
@@ -38,7 +32,7 @@ final class MirrorService: NSObject, GCDAsyncSocketDelegate {
         let tcpQueue = DispatchQueue(label: "tcpQueue")
 
         let socket = GCDAsyncSocket(delegate: self, delegateQueue: tcpQueue)
-        try? socket.accept(onPort: port)
+        try? socket.accept(onPort: UInt16(Constants.airTunesPort))
 
         return socket
     }

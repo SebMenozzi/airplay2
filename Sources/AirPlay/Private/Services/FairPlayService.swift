@@ -5,14 +5,16 @@ import Curve25519
 import CryptoKit
 import CryptoSwift
 
-final class FairPlay {
-    var isFairPlaySetupCompleted: Bool = false
-    var keyMsg: Data?
+final class FairPlayService {
+
+    private(set) var isFairPlaySetupCompleted: Bool = false
+    private(set) var keyMessage = Data()
 
     func setup(body: Data) -> Data? {
         if body.count == 16 {
             let mode = body[14]
 
+            // The 5th byte must be 0x03.
             if body[4] != 3 {
                 fatalError("Unsupported fairplay version")
             }
@@ -36,9 +38,16 @@ final class FairPlay {
 
             return output
         } else if body.count == 164 {
+            // The 5th byte must be 0x03.
+            if body[4] != 3 {
+                fatalError("Unsupported fairplay version")
+            }
+
+            // First 12 bytes are fairplay header
             let fpHeader: [UInt8] = [70, 80, 76, 89, 3, 1, 4, 0, 0, 0, 0, 20]
 
-            self.keyMsg = body
+            // Save the 164 bytes because this is the KeyMessage.
+            self.keyMessage = body
 
             let stream = CustomStream(data: body)
             stream.skipBytesNumber(n: 144)
@@ -52,4 +61,6 @@ final class FairPlay {
 
         return nil
     }
+
+    
 }

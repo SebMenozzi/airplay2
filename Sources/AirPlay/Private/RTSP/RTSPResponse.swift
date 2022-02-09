@@ -12,6 +12,10 @@ final class RTSPResponse {
         response.append("CSeq: \(number)")
     }
 
+    func addHeader(key: String, value: String) {
+        response.append("\(key): \(value)")
+    }
+
     func addContentType(type: String) {
         response.append("Content-Type: \(type)")
     }
