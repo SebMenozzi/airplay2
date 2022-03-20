@@ -1,17 +1,18 @@
 import Foundation
+import Ed25519
 
-final class SessionService {
+final class SessionService: NSObject {
 
-    private let bonjourService: BonjourService
-    private let airTunesService: AirTunesService
+    var sessions = [String: Session]()
 
-    init(name: String) {
-        self.bonjourService = BonjourService(name: name)
-        self.airTunesService = AirTunesService()
+    func getSession(sessionId: String) -> Session {
+        if let session = sessions[sessionId] {
+            return session
+        } else {
+            let session = Session(sessionId: sessionId)
+            sessions[sessionId] = session
+            return session
+        }
     }
 
-    func start() {
-        bonjourService.start()
-        airTunesService.start()
-    }
 }

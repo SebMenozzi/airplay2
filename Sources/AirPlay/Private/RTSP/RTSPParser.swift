@@ -1,38 +1,8 @@
 import Foundation
 
-final class RTSPHeader: NSObject {
-    // https://emanuelecozzi.net/docs/airplay2/rtsp/
-    let contentType: String? // Type of content
-    let contentLength: Int // Length of the content/body after the headers
-    let activeRemote: String // Authentication token for the DACP server
-    let cseq: Int // Specifies the sequence number for an RTSP request
-    let dacpID: String // 64-bit value identifying the DACP server
-
-    init(fields: [String: String]) {
-        self.contentType = fields["content-type"]
-        self.contentLength = Int(fields["content-length"] ?? "0") ?? 0
-        self.activeRemote = fields["active-remote"]!
-        self.cseq = Int(fields["cseq"]!)!
-        self.dacpID = fields["dacp-id"]!
-    }
-}
-
-final class RTSPMessage: NSObject {
-    let method: String // POST, GET, SETUP...
-    let url: String
-    let header: RTSPHeader
-    let body: Data
-
-    init(method: String, url: String, header: RTSPHeader, body: Data) {
-        self.method = method
-        self.url = url
-        self.header = header
-        self.body = body
-    }
-}
-
 final class RTSPParser: NSObject {
-    // For convinience
+
+    /// For clarity
     private let delimSpace = [UInt8](" ".utf8).first! // 32
     private let delimReturn = [UInt8]("\r".utf8).first! // 13
     private let delimBreak = [UInt8]("\n".utf8).first! // 10
@@ -43,6 +13,8 @@ final class RTSPParser: NSObject {
     init(data: Data) {
         self.stream = CustomStream(data: data)
     }
+
+    // MARK: - Public
 
     func parseHeaderFields() -> [String: String] {
         var fieldsCount = 0
@@ -97,31 +69,22 @@ final class RTSPParser: NSObject {
         return fields
     }
 
-    func parse() -> RTSPMessage {
-        guard let methodBytes = stream.readBytes(with: delimSpace, and: Constants.requestMaxMethodLength) else {
-            fatalError("No Method found")
+    func parse() -> RTSPMessage? {
+        guard let methodBytes = stream.readBytes(with: delimSpace, and: Constants.requestMaxMethodLength),
+              let method = String(bytes: methodBytes, encoding: .utf8),
+              let urlBytes = stream.readBytes(with: delimSpace, and: Constants.requestMaxURLLength),
+              let url = String(bytes: urlBytes, encoding: .utf8),
+              let protocolBytes = stream.readBytes(with: delimReturn, and: Constants.requestMaxProtocolLength),
+              let proto = String(bytes: protocolBytes, encoding: .utf8) else {
+            return nil
         }
-
-        let method = String(bytes: methodBytes, encoding: .utf8)!
-
-        guard let urlBytes = stream.readBytes(with: delimSpace, and: Constants.requestMaxURLLength) else {
-            fatalError("No URL found")
-        }
-
-        let url = String(bytes: urlBytes, encoding: .utf8)!
-
-        guard let protocolBytes = stream.readBytes(with: delimReturn, and: Constants.requestMaxProtocolLength) else {
-            fatalError("No Protocol found")
-        }
-
-        let proto = String(bytes: protocolBytes, encoding: .utf8)!
 
         if proto != Constants.rtspProtocol {
-            fatalError("Expected Protocol \(Constants.rtspProtocol)")
+            return nil
         }
 
         if !stream.readByteEqual(byte: delimBreak) {
-            fatalError("Expected \\n after \(Constants.rtspProtocol)")
+            return nil
         }
 
         let fields = parseHeaderFields()
@@ -133,7 +96,7 @@ final class RTSPParser: NSObject {
             header.contentLength != body.count ||
             header.contentLength > Constants.rtspMaxContentLength
            ) {
-            fatalError("Invalid Content Body")
+            return nil
         }
 
         return RTSPMessage(

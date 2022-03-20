@@ -1,15 +1,23 @@
 import Foundation
 
 public class AirPlay: NSObject {
-    private let service: SessionService
+    private let sessionService: SessionService
+    private let bonjourService: BonjourService
+    private let airTunesService: AirTunesService
+    private let mirroringService: MirroringService
 
     public init(name: String) {
-        service = SessionService(name: name)
+        sessionService = SessionService()
+        bonjourService = BonjourService(name: name)
+        airTunesService = AirTunesService(sessionService: sessionService)
+        mirroringService = MirroringService(sessionService: sessionService)
     }
 
     public func start() {
         print("Starting...")
 
-        service.start()
+        bonjourService.start()
+        airTunesService.start()
+        mirroringService.start()
     }
 }

@@ -1,6 +1,7 @@
 import Foundation
 
 final class RTSPResponse {
+
     private var response: [String]
     private var body = Data()
 

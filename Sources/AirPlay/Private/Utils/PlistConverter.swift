@@ -1,6 +1,9 @@
 import Foundation
 
-// https://gist.github.com/ngbaanh/7c437d99bea75161a59f5af25be99de4
+/**
+ PlistConverter is an utility class to handle plist and binary plist. Taken here:
+ https://gist.github.com/ngbaanh/7c437d99bea75161a59f5af25be99de4
+ */
 final class PlistConverter {
     public struct PlistMimeType {
         static let xmlPlist    = "text/x-apple-plist+xml"

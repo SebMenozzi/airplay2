@@ -11,7 +11,7 @@ import Foundation
  - airTunesService: AirTunes service is used to exchange informations between devices.
 */
 
-final class BonjourService {
+final class BonjourService: NSObject {
 
     private var airPlayService: NetService!
     private var airTunesService: NetService!
@@ -19,6 +19,8 @@ final class BonjourService {
 
     init(name: String) {
         self.name = name
+
+        super.init()
     }
     
     func start() {

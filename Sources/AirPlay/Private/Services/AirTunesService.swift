@@ -2,20 +2,24 @@ import CocoaAsyncSocket
 import Cocoa
 
 final class AirTunesService: NSObject {
-    
+
+    private let sessionService: SessionService
     private var tcpSockets = [GCDAsyncSocket]()
 
-    private let pairingService = PairingService()
-    private let fairPlayService = FairPlayService()
-    private let mirrorService = MirrorService()
-    // private let audioService = AudioService()
+    init(sessionService: SessionService) {
+        self.sessionService = sessionService
+
+        super.init()
+    }
+
+    // MARK: - Public
 
     func start() {
         let socket = createSocket()
         tcpSockets.append(socket)
     }
 
-    // MARK: Private
+    // MARK: - Private
     
     private func createSocket() -> GCDAsyncSocket {
         let tcpQueue = DispatchQueue(label: "tcpQueue")
@@ -28,7 +32,10 @@ final class AirTunesService: NSObject {
 
     private func handleRTSPData(_ data: Data, from sock: GCDAsyncSocket) {
         let parser = RTSPParser(data: data)
-        let message = parser.parse()
+        guard let message = parser.parse() else {
+            print("Can't parse rtsp message...")
+            return
+        }
 
         setSessionSocket(sock)
         respond(message: message, using: sock)
@@ -36,7 +43,7 @@ final class AirTunesService: NSObject {
     }
 
     private func setSessionSocket(_ sock: GCDAsyncSocket!) {
-        // Disconnect any other session
+        /// Disconnect any other session
         for i in 1..<tcpSockets.count {
             if tcpSockets[i] === sock {
                 break
@@ -51,6 +58,11 @@ final class AirTunesService: NSObject {
         let method = message.method
         let url = message.url
         let sessionId = message.header.activeRemote
+        let session = sessionService.getSession(sessionId: sessionId)
+
+        let pairing = Pairing(session: session)
+        let fairPlay = FairPlay(session: session)
+        let mirroring = Mirroring(session: session)
 
         print("-", method, url)
 
@@ -135,24 +147,43 @@ final class AirTunesService: NSObject {
                     fatalError("Invalid pair-setup data: should be 32 bytes")
                 }
 
-                response.addBody(body: pairingService.setup())
+                response.addBody(body: pairing.setup())
                 response.addContentType(type: "application/octet-stream")
 
                 break
             case "/pair-verify":
-                guard let data = pairingService.verify(body: message.body) else {
+                // 68 bytes (the first 4 bytes are 00/01 00 00 00)
+                if message.body.count != 4 + 32 + 32 {
                     break
                 }
 
-                response.addBody(body: data)
-                response.addContentType(type: "application/octet-stream")
+                let stream = CustomStream(data: message.body)
+
+                guard let flag = stream.readByte() else {
+                    break
+                }
+
+                if flag > 0 {
+                    guard let data = pairing.verify1(stream: stream) else {
+                        break
+                    }
+
+                    response.addBody(body: data)
+                    response.addContentType(type: "application/octet-stream")
+                } else {
+                    if !pairing.verify2(stream: stream) {
+                        print("Pairing failed!")
+                    }
+
+                    response.addContentType(type: "application/octet-stream")
+                }
 
                 break
             case "/fp-setup":
-                if !pairingService.isPairingVerified {
+                if !session.isPairingVerified {
                     response.replaceUnauthorized()
                 } else {
-                    guard let data = fairPlayService.setup(body: message.body) else {
+                    guard let data = fairPlay.setup(body: message.body) else {
                         break
                     }
 
@@ -165,10 +196,10 @@ final class AirTunesService: NSObject {
                 break
             }
         case "SETUP":
-            if !fairPlayService.isFairPlaySetupCompleted {
+            if !session.isFairPlaySetupCompleted {
                 response.replaceBadRequest()
             } else {
-                guard let data = mirrorService.setup(body: message.body) else {
+                guard let data = mirroring.setup(body: message.body) else {
                     break
                 }
 
@@ -187,6 +218,19 @@ final class AirTunesService: NSObject {
 
             response.addContentType(type: "text/parameters")
             response.addBody(body: "volume: 1.000000\r\n".data(using: .ascii)!)
+
+            break
+
+        case "SET_PARAMETER":
+            if let contentType = message.header.contentType,
+               contentType == "text/parameters" {
+                /// The client makes this call when it wants to know the receiver's volume level.
+                guard let data = String(bytes: message.body, encoding: .ascii) else {
+                    break
+                }
+
+                print(data)
+            }
 
             break
 
@@ -217,6 +261,7 @@ final class AirTunesService: NSObject {
     }
 }
 
+// MARK: - GCDAsyncSocketDelegate
 extension AirTunesService: GCDAsyncSocketDelegate {
     func socket(_ sock: GCDAsyncSocket, didAcceptNewSocket newSocket: GCDAsyncSocket) {
         tcpSockets.append(newSocket)
